@@ -1,6 +1,6 @@
 import { useSignIn, useSignUp } from '@clerk/react';
 import { ArrowLeft, ArrowRight, Check, Eye, EyeOff, Loader2, LockKeyhole, Mail } from 'lucide-react';
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link, Navigate, useNavigate, useSearchParams } from 'react-router';
 import { clerkAuthEnabled, useAuthSession } from '../../auth/AuthSession';
 
@@ -12,6 +12,43 @@ type AuthError = {
   longMessage?: string;
   message?: string;
 } | null;
+
+const GOOGLE_OAUTH_TIMEOUT_MS = 15_000;
+
+class GoogleOAuthTimeoutError extends Error {
+  constructor() {
+    super('Google sign-in took too long. Please try again.');
+    this.name = 'GoogleOAuthTimeoutError';
+  }
+}
+
+const withGoogleOAuthTimeout = async <T,>(operation: Promise<T>) => {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      operation,
+      new Promise<never>((_, reject) => {
+        timeoutId = setTimeout(() => reject(new GoogleOAuthTimeoutError()), GOOGLE_OAUTH_TIMEOUT_MS);
+      }),
+    ]);
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
+  }
+};
+
+const caughtAuthError = (error: unknown): AuthError => {
+  if (error instanceof Error) return { message: error.message };
+  if (error && typeof error === 'object') {
+    const candidate = error as { code?: unknown; longMessage?: unknown; message?: unknown; errors?: unknown };
+    if (Array.isArray(candidate.errors) && candidate.errors.length > 0) return caughtAuthError(candidate.errors[0]);
+    return {
+      code: typeof candidate.code === 'string' ? candidate.code : undefined,
+      longMessage: typeof candidate.longMessage === 'string' ? candidate.longMessage : undefined,
+      message: typeof candidate.message === 'string' ? candidate.message : undefined,
+    };
+  }
+  return null;
+};
 
 const readableError = (error: AuthError, fallback: string) => {
   if (!error) return fallback;
@@ -64,8 +101,14 @@ export const AuthPage: React.FC<{ mode: AuthMode }> = ({ mode }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const googleAttemptRef = useRef(0);
   const selectedPlan = ['creator', 'growth', 'studio'].includes(searchParams.get('plan') || '') ? searchParams.get('plan') : null;
   const destination = selectedPlan ? `/pricing?plan=${selectedPlan}` : '/app';
+
+  useEffect(() => {
+    googleAttemptRef.current += 1;
+    setIsGoogleLoading(false);
+  }, [mode]);
 
   if (session.isLoaded && session.isSignedIn) return <Navigate to={destination} replace />;
 
@@ -86,17 +129,29 @@ export const AuthPage: React.FC<{ mode: AuthMode }> = ({ mode }) => {
 
   const beginGoogle = async () => {
     if (!signIn || !signUp) return;
+    const attempt = googleAttemptRef.current + 1;
+    googleAttemptRef.current = attempt;
     setError(null);
     setIsGoogleLoading(true);
-    const resource = isSignup ? signUp : signIn;
-    const { error: oauthError } = await resource.sso({
-      strategy: 'oauth_google',
-      redirectCallbackUrl: '/sso-callback',
-      redirectUrl: destination,
-    });
-    if (oauthError) {
-      setError(readableError(oauthError, 'Google sign-in could not be started.'));
-      setIsGoogleLoading(false);
+    try {
+      // Social authentication is a sign-in-or-sign-up flow in Clerk. Reset both
+      // resources first so an abandoned or failed OAuth attempt cannot poison a
+      // later retry, then use one flow for both entry pages.
+      await withGoogleOAuthTimeout((async () => {
+        await Promise.all([signIn.reset(), signUp.reset()]);
+        const { error: oauthError } = await signIn.sso({
+          strategy: 'oauth_google',
+          redirectCallbackUrl: '/sso-callback',
+          redirectUrl: destination,
+        });
+        if (oauthError) throw oauthError;
+      })());
+    } catch (oauthError) {
+      if (googleAttemptRef.current === attempt) {
+        setError(readableError(caughtAuthError(oauthError), 'Google sign-in could not be started. Please try again.'));
+      }
+    } finally {
+      if (googleAttemptRef.current === attempt) setIsGoogleLoading(false);
     }
   };
 

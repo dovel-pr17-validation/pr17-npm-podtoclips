@@ -1779,3 +1779,19 @@ Video URL
   revision tag to the stable Cloud Run service URL so future backend revisions
   can be released without rebuilding the frontend around a revision-specific
   hostname.
+
+## Update: Resilient Production Google Authentication
+
+- Confirmed the production Google OAuth credentials and redirect path work by
+  completing a real Google signup and verifying the resulting Clerk user uses
+  the `oauth_google` provider.
+- Replaced the separate Google login and signup operations with one Clerk
+  sign-in-or-sign-up flow. Both entry pages now reset abandoned sign-in and
+  sign-up attempts before starting OAuth, preventing a failed or stale attempt
+  from poisoning the next retry.
+- Added handling for returned Clerk errors, thrown exceptions, and an explicit
+  15-second timeout. The Google button always recovers instead of displaying an
+  endless loading spinner when navigation does not begin.
+- Added regression coverage for login, signup, stale-attempt resets, returned
+  errors, thrown errors, and timeout recovery. Six focused authentication tests,
+  all 36 UI tests, and the production frontend build pass.
