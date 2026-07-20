@@ -1766,3 +1766,16 @@ Video URL
 - Attached `podtoclips.com` and `www.podtoclips.com` to the Vercel project.
   Custom-domain activation is waiting only for the required Wix DNS record
   changes and subsequent Vercel verification.
+- Replaced the Wix website-routing records with Vercel's two apex A records and
+  the project-specific `www` CNAME. Vercel verified both domains as configured
+  correctly, and HTTPS requests to the landing, pricing, login, and projects
+  routes returned `200` with valid certificates.
+- Switched `easyedits-api` production traffic from the Clerk Development
+  revision to the staged `easyedits-api-clerkprod1` revision at 100 percent.
+  The stable API health endpoint returned `200`, protected unauthenticated data
+  returned `401`, the production-origin preflight returned `204`, and no
+  unexpected error-level logs followed the cutover.
+- Updated Vercel's public `VITE_API_BASE_URL` configuration from the temporary
+  revision tag to the stable Cloud Run service URL so future backend revisions
+  can be released without rebuilding the frontend around a revision-specific
+  hostname.
