@@ -1,0 +1,28 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "vite",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "rewrites": [
+    {
+      "source": "/login/:path*",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/signup/:path*",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/sso-callback",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/app/:path*",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/editor/:path*",
+      "destination": "/index.html"
+    }
+  ]
+}

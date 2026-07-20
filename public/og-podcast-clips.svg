@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#f5f3ee"/>
+  <path d="M0 110H1200M0 520H1200M170 0V630M1030 0V630" stroke="#11120f" stroke-opacity=".09"/>
+  <rect x="64" y="52" width="50" height="50" rx="14" fill="#ff5a36"/>
+  <path d="m69 75 25-15m-4 34 19-11" stroke="#fff" stroke-width="8" stroke-linecap="round"/>
+  <text x="131" y="88" fill="#11120f" font-family="Arial, sans-serif" font-size="28" font-weight="700">PodToClips</text>
+  <rect x="68" y="146" width="322" height="35" rx="17.5" fill="#d9f99d"/>
+  <text x="88" y="170" fill="#11120f" font-family="Arial, sans-serif" font-size="15" font-weight="700" letter-spacing="1">FOR PODCAST TEAMS OF ONE</text>
+  <text x="68" y="260" fill="#11120f" font-family="Georgia, serif" font-size="70">The AI podcast</text>
+  <text x="68" y="338" fill="#11120f" font-family="Georgia, serif" font-size="70">clipper for teams</text>
+  <text x="68" y="419" fill="#dc3d1e" font-family="Georgia, serif" font-size="78" font-style="italic">of one.</text>
+  <text x="70" y="478" fill="#5f6059" font-family="Arial, sans-serif" font-size="20">One full episode → complete, editable vertical clips.</text>
+  <rect x="790" y="76" width="318" height="478" rx="28" fill="#151614"/>
+  <rect x="819" y="104" width="260" height="51" rx="12" fill="#22231f" stroke="#fff" stroke-opacity=".12"/>
+  <circle cx="843" cy="129" r="8" fill="#ff5a36"/>
+  <rect x="861" y="119" width="136" height="8" rx="4" fill="#fff" fill-opacity=".72"/>
+  <rect x="861" y="135" width="93" height="6" rx="3" fill="#fff" fill-opacity=".28"/>
+  <rect x="876" y="181" width="146" height="260" rx="16" fill="#4f5d54"/>
+  <circle cx="949" cy="251" r="26" fill="#b77e62"/>
+  <ellipse cx="949" cy="339" rx="51" ry="70" fill="#2f3933"/>
+  <text x="896" y="396" fill="#fff" font-family="Arial, sans-serif" font-size="12" font-weight="700">THE WHOLE POINT, INTACT</text>
+  <rect x="825" y="470" width="110" height="30" rx="7" fill="#ff5a36"/>
+  <rect x="943" y="470" width="70" height="30" rx="7" fill="#3157ff"/>
+  <rect x="1021" y="470" width="52" height="30" rx="7" fill="#697169"/>
+  <rect x="825" y="510" width="248" height="17" rx="5" fill="#3157ff" fill-opacity=".5"/>
+</svg>

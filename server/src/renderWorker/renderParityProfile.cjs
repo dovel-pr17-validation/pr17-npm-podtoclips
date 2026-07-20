@@ -1,0 +1,72 @@
+const runtimeVersions = Object.freeze({
+  node: '20.20.2',
+  npm: '11.18.0',
+  python: '3.14.5',
+  ffmpeg: '8.1.2',
+  x264: '0.165.3222',
+  x264Revision: 'b35605ace3ddf7c1a5d67a2eb553f034aef41d55',
+  freetype: '2.14.3',
+  fontconfig: '2.18.1',
+  fribidi: '1.0.16',
+  harfbuzz: '14.2.1',
+  libass: '0.17.5',
+  dav1d: '1.5.3',
+  mediapipe: '0.10.35',
+  opencv: '5.0.0.93',
+  numpy: '2.5.1',
+});
+
+const renderEnvironment = Object.freeze({
+  DENSE_FACE_TRACKING: '1',
+  DENSE_FACE_TRACKING_FPS: '4',
+  DENSE_FACE_TRACKING_MAX_POINTS: '96',
+  DENSE_FACE_TRACKING_MAX_RENDER_POINTS: '48',
+  DENSE_FACE_TRACKING_MIN_CONFIDENCE: '0.25',
+  DENSE_FACE_TRACKING_REQUIRED: '0',
+  DENSE_FACE_MIN_SPEAKER_SEGMENT_SECONDS: '0.65',
+  DENSE_FACE_SPEAKER_MERGE_GAP_SECONDS: '0.8',
+  DENSE_FACE_MAPPED_TRACK_MIN_CONFIDENCE: '0.35',
+  MEDIAPIPE_FACE_REFINEMENT: '1',
+  MEDIAPIPE_FACE_RECOVERY: '1',
+  MEDIAPIPE_FACE_LANDMARKER_MODEL: 'server/models/face_landmarker.task',
+  RENDER_QC_ENABLED: '0',
+  RENDER_QC_SAFE_CONTAIN_FALLBACK: '0',
+  RENDER_QC_STACKED_SPEAKER_FALLBACK: '0',
+  RENDER_SOURCE_ACCESS_MODE: 'signed_url',
+  FFMPEG_PATH: '/opt/easyed-media/bin/ffmpeg',
+  FFMPEG_PRESET: 'medium',
+  FFMPEG_CRF: '18',
+  FFMPEG_AUDIO_BITRATE: '160k',
+  EASYED_UPGRADES_ENABLED: '1',
+  REMOTION_CAPTIONS_ENABLED: '1',
+  REMOTION_CAPTION_PAGE_MS: '900',
+  REMOTION_CAPTION_MAX_WORDS: '5',
+  REMOTION_CAPTION_MAX_CHARACTERS: '36',
+  REMOTION_CAPTION_MARGIN_V: '200',
+  REMOTION_CAPTION_BURNED_IN_MARGIN_V: '360',
+  REMOTION_CAPTION_FIXED_FONT_SIZE: '74',
+  REMOTION_CAPTION_CENTER_Y: '1520',
+  REMOTION_CAPTION_BURNED_IN_CENTER_Y: '1310',
+  REMOTION_CAPTION_OUTLINE: '4',
+  REMOTION_CAPTION_SHADOW: '2',
+  SOURCE_VISUAL_FIT_V2_ENABLED: '1',
+  SOURCE_VISUAL_FIT_MAX_WIDTH: '996',
+  SOURCE_VISUAL_FIT_MAX_HEIGHT: '1760',
+  RENDER_BACKGROUND_BLUR: '34',
+  RENDER_BACKGROUND_DIM: '0.18',
+  CAPTION_FONT: 'Inter',
+  CAPTION_DEVANAGARI_FONT: 'Noto Sans Devanagari',
+  CAPTION_FONTS_DIR: '/opt/easyed-fonts',
+  CAPTION_FONT_SIZE: '74',
+  CAPTION_MARGIN_L: '80',
+  CAPTION_MARGIN_R: '80',
+  CAPTION_MARGIN_V: '180',
+});
+
+function cloudRunEnvCsv() {
+  return Object.entries(renderEnvironment)
+    .map(([key, value]) => `${key}=${value}`)
+    .join(',');
+}
+
+module.exports = { runtimeVersions, renderEnvironment, cloudRunEnvCsv };

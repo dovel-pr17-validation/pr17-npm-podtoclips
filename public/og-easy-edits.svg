@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#f5f3ee"/>
+  <path d="M0 110H1200M0 520H1200M170 0V630M1030 0V630" stroke="#11120f" stroke-opacity=".09"/>
+  <rect x="64" y="52" width="50" height="50" rx="14" fill="#ff5a36"/>
+  <path d="m69 75 25-15m-4 34 19-11" stroke="#fff" stroke-width="8" stroke-linecap="round"/>
+  <text x="131" y="88" fill="#11120f" font-family="Arial, sans-serif" font-size="28" font-weight="700">PodToClips</text>
+  <text x="68" y="242" fill="#11120f" font-family="Georgia, serif" font-size="76">One recording.</text>
+  <text x="68" y="326" fill="#11120f" font-family="Georgia, serif" font-size="76">Your next month of</text>
+  <text x="68" y="410" fill="#dc3d1e" font-family="Georgia, serif" font-size="80" font-style="italic">content.</text>
+  <rect x="790" y="76" width="318" height="478" rx="28" fill="#151614"/>
+  <rect x="876" y="104" width="146" height="260" rx="16" fill="#4f5d54"/>
+  <circle cx="949" cy="174" r="26" fill="#b77e62"/>
+  <ellipse cx="949" cy="262" rx="51" ry="70" fill="#2f3933"/>
+  <text x="893" y="319" fill="#fff" font-family="Arial, sans-serif" font-size="13" font-weight="700">THE COMPLETE THOUGHT</text>
+  <rect x="825" y="406" width="248" height="34" rx="8" fill="#ff5a36"/>
+  <rect x="825" y="450" width="114" height="34" rx="8" fill="#3157ff"/>
+  <rect x="949" y="450" width="124" height="34" rx="8" fill="#697169"/>
+  <rect x="825" y="494" width="248" height="20" rx="6" fill="#3157ff" fill-opacity=".5"/>
+</svg>

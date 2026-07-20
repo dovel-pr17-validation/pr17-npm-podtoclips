@@ -1,0 +1,15 @@
+.git
+.gitignore
+node_modules
+dist
+server/.env
+server/.tools
+server/data
+server/storage
+server/tmp_uploads
+server/downloads
+*.mp4
+*.webm
+*.mkv
+*.log
+.DS_Store

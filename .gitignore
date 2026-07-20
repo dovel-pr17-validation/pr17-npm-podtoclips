@@ -1,0 +1,55 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+.prerender
+dist
+dist-ssr
+*.local
+/.vercel/
+/.excalidraw/
+/output/
+/.playwright-mcp/
+/editor-refactor-*.png
+/login-before.png
+/Screenshot*.png
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+._*
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Environment & Credentials
+.env
+.env.local
+server/.env
+server/firebase-service-account.json
+server/data/
+server/storage/
+server/tmp_uploads/
+server/.tools/
+
+# Downloaded/processed videos
+server/downloads/*.mp4
+server/downloads/*.webm
+server/downloads/*.mkv
+server/downloads/*.mka
+
+# Python
+server/venv/
+__pycache__/
+*.pyc
+*.mp4
