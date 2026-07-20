@@ -1753,3 +1753,16 @@ Video URL
   credentials, generated media, local databases, caches, browser artifacts,
   model environments, and build output. Gitleaks 8.30.1 scanned the complete
   publish set and reported zero secrets.
+- Published the clean snapshot as the first `main` commit in the private
+  `APPNINJAS123/podtoclips` GitHub repository. A second commit-history scan and
+  a remote tree audit found zero secrets, forbidden environment files, private
+  keys, or generated video files.
+- Connected the GitHub repository to the Vercel project `podtoclips`, persisted
+  only public Vite build variables, and completed the first production build at
+  `podtoclips.vercel.app`.
+- Verified the landing, pricing, login, and projects routes return `200`. The
+  staged Clerk Production API health endpoint returns `200`, while a protected
+  unauthenticated API request correctly returns `401`.
+- Attached `podtoclips.com` and `www.podtoclips.com` to the Vercel project.
+  Custom-domain activation is waiting only for the required Wix DNS record
+  changes and subsequent Vercel verification.
