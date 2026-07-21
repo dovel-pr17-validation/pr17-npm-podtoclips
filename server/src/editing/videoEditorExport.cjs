@@ -80,31 +80,49 @@ function fadeDurationAt(project, boundaryIndex) {
 }
 
 function buildFilterGraph(project, hasMusic) {
-  const chains = project.segments.flatMap((segment, index) => ([
-    `[${index}:v]scale=1080:1920:force_original_aspect_ratio=decrease:flags=lanczos,pad=1080:1920:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1,fps=30,settb=AVTB,format=yuv420p,setpts=PTS-STARTPTS[v${index}]`,
-    `[${index}:a]aresample=48000,volume=${project.programVolume.toFixed(2)},asetpts=PTS-STARTPTS[a${index}]`,
-  ]));
+  const chains = project.segments.flatMap((segment, index) => {
+    const duration = segmentDuration(segment);
+    const incomingFadeDuration = fadeDurationAt(project, index - 1);
+    const outgoingFadeDuration = fadeDurationAt(project, index);
+    const videoFilters = [
+      'scale=1080:1920:force_original_aspect_ratio=decrease:flags=lanczos',
+      'pad=1080:1920:(ow-iw)/2:(oh-ih)/2:color=black',
+      'setsar=1',
+      'fps=30',
+      'settb=AVTB',
+      'format=yuv420p',
+      'setpts=PTS-STARTPTS',
+    ];
+    const audioFilters = [
+      'aresample=48000',
+      `volume=${project.programVolume.toFixed(2)}`,
+      'asetpts=PTS-STARTPTS',
+    ];
+    if (incomingFadeDuration > 0) {
+      videoFilters.push(`fade=t=in:st=0:d=${incomingFadeDuration.toFixed(3)}:color=black`);
+      audioFilters.push(`afade=t=in:st=0:d=${incomingFadeDuration.toFixed(3)}`);
+    }
+    if (outgoingFadeDuration > 0) {
+      const fadeStart = Math.max(0, duration - outgoingFadeDuration);
+      videoFilters.push(`fade=t=out:st=${fadeStart.toFixed(3)}:d=${outgoingFadeDuration.toFixed(3)}:color=black`);
+      audioFilters.push(`afade=t=out:st=${fadeStart.toFixed(3)}:d=${outgoingFadeDuration.toFixed(3)}`);
+    }
+    return [
+      `[${index}:v]${videoFilters.join(',')}[v${index}]`,
+      `[${index}:a]${audioFilters.join(',')}[a${index}]`,
+    ];
+  });
 
   let videoLabel = 'v0';
   let audioLabel = 'a0';
   let outputDuration = segmentDuration(project.segments[0]);
   for (let index = 1; index < project.segments.length; index += 1) {
-    const fadeDuration = fadeDurationAt(project, index - 1);
     const nextVideoLabel = `vx${index}`;
     const nextAudioLabel = `ax${index}`;
-    if (fadeDuration > 0) {
-      const offset = Math.max(0, outputDuration - fadeDuration);
-      chains.push(
-        `[${videoLabel}][v${index}]xfade=transition=fade:duration=${fadeDuration.toFixed(3)}:offset=${offset.toFixed(3)}[${nextVideoLabel}]`,
-        `[${audioLabel}][a${index}]acrossfade=d=${fadeDuration.toFixed(3)}:c1=tri:c2=tri[${nextAudioLabel}]`,
-      );
-      outputDuration += segmentDuration(project.segments[index]) - fadeDuration;
-    } else {
-      chains.push(
-        `[${videoLabel}][${audioLabel}][v${index}][a${index}]concat=n=2:v=1:a=1[${nextVideoLabel}][${nextAudioLabel}]`,
-      );
-      outputDuration += segmentDuration(project.segments[index]);
-    }
+    chains.push(
+      `[${videoLabel}][${audioLabel}][v${index}][a${index}]concat=n=2:v=1:a=1[${nextVideoLabel}][${nextAudioLabel}]`,
+    );
+    outputDuration += segmentDuration(project.segments[index]);
     videoLabel = nextVideoLabel;
     audioLabel = nextAudioLabel;
   }
