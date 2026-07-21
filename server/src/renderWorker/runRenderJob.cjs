@@ -1,5 +1,7 @@
 require('dotenv').config({ path: require('path').join(__dirname, '..', '..', '.env') });
 
+const sentry = require('../monitoring/sentry.cjs');
+sentry.initSentry('podtoclips-render-worker');
 const fs = require('fs');
 const fsp = require('fs/promises');
 const os = require('os');
@@ -1212,9 +1214,11 @@ async function main() {
 }
 
 if (require.main === module) {
-  main().catch((error) => {
+  main().catch(async (error) => {
+    sentry.captureException(error);
     console.error(error);
-    process.exit(1);
+    await sentry.flush(2000);
+    process.exitCode = 1;
   });
 }
 

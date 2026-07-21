@@ -10,6 +10,7 @@ const { functions } = require('./inngest/functions.cjs');
 const { assertClerkConfiguration, clerkSessionMiddleware, requireAuthenticatedRequest } = require('./auth/clerkAuth.cjs');
 const { handleDodoWebhook } = require('./billing/dodoBilling.cjs');
 const { createLocalAssetToken, normalizeAssetKey, verifyLocalAssetToken } = require('./security/assetAccess.cjs');
+const sentry = require('./monitoring/sentry.cjs');
 
 function safeDownloadName(key) {
   const baseName = path.basename(key).replace(/[^a-zA-Z0-9._-]/g, '_');
@@ -136,6 +137,8 @@ function createApp() {
       return next(error);
     }
   });
+
+  if (sentry.isEnabled()) sentry.setupExpressErrorHandler(app);
 
   app.use((error, req, res, next) => {
     if (res.headersSent) return next(error);

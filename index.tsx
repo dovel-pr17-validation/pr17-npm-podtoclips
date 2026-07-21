@@ -10,6 +10,9 @@ import './src/styles/editor.css';
 import './src/styles/auth.css';
 import App from './EasyEditsApp';
 import { ClerkAuthSessionBridge, clerkAuthEnabled } from './src/auth/AuthSession';
+import { initializeBrowserMonitoring } from './src/monitoring/sentry';
+
+initializeBrowserMonitoring();
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
