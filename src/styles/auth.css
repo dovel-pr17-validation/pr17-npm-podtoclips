@@ -52,12 +52,16 @@
   height: 31px;
   position: relative;
   overflow: hidden;
-  border-radius: 9px;
-  background: var(--auth-coral);
-  box-shadow: 0 8px 18px rgba(242, 95, 69, 0.23);
+  border-radius: 0;
+  background-color: transparent;
+  background-image: url("/brand/Untitled%20design-3.svg");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 340%;
+  box-shadow: none;
 }
 
-.auth-brand-mark i { position: absolute; left: 7px; width: 19px; height: 4px; border-radius: 4px; background: white; transform: rotate(-35deg); }
+.auth-brand-mark i { display: none; }
 .auth-brand-mark i:first-child { top: 8px; }
 .auth-brand-mark i:last-child { top: 17px; left: 6px; width: 16px; }
 

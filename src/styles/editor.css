@@ -671,8 +671,8 @@
   .editor-topbar, .editor-layout { display: none; }
   .editor-mobile-gate { min-height: 100dvh; padding: max(22px, env(safe-area-inset-top)) 18px max(24px, env(safe-area-inset-bottom)); display: flex; align-items: center; justify-content: center; flex-direction: column; overflow-y: auto; background: radial-gradient(circle at 50% 18%, color-mix(in srgb, var(--ed-blue) 17%, transparent), transparent 36%), var(--ed-shell); }
   .editor-mobile-gate-brand { width: min(100%, 420px); margin-bottom: 22px; display: flex; align-items: center; gap: 10px; color: var(--ed-text); font-size: 15px; font-weight: 730; letter-spacing: -.025em; }
-  .editor-mobile-gate-brand > span { width: 31px; height: 31px; position: relative; overflow: hidden; border-radius: 9px; background: var(--ed-accent); }
-  .editor-mobile-gate-brand i { width: 20px; height: 4px; position: absolute; left: 6px; border-radius: 5px; background: #fff; transform: rotate(-35deg); }
+  .editor-mobile-gate-brand > span { width: 31px; height: 31px; position: relative; overflow: hidden; border-radius: 0; background-color: transparent; background-image: url("/brand/Untitled%20design-3.svg"); background-position: center; background-repeat: no-repeat; background-size: 340%; }
+  .editor-mobile-gate-brand i { display: none; }
   .editor-mobile-gate-brand i:first-child { top: 8px; }
   .editor-mobile-gate-brand i:last-child { top: 17px; width: 16px; }
   .editor-mobile-gate-card { width: min(100%, 420px); padding: 30px 24px 24px; border: 1px solid var(--ed-line); border-radius: 22px; color: var(--ed-text); background: color-mix(in srgb, var(--ed-panel) 94%, transparent); box-shadow: 0 28px 80px rgb(0 0 0 / 24%); backdrop-filter: blur(18px); }

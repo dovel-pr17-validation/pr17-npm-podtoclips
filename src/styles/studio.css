@@ -64,8 +64,8 @@
 
 .studio-sidebar-head { height: 42px; display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 3px 18px; }
 .studio-brand { color: var(--studio-ink); text-decoration: none; display: inline-flex; align-items: center; gap: 10px; min-width: 0; font-weight: 680; letter-spacing: -0.02em; white-space: nowrap; }
-.studio-brand-mark { width: 28px; height: 28px; flex: 0 0 28px; border-radius: 8px; background: var(--studio-coral); position: relative; overflow: hidden; }
-.studio-brand-mark i { position: absolute; left: 6px; width: 18px; height: 4px; border-radius: 4px; background: white; transform: rotate(-35deg); }
+.studio-brand-mark { width: 28px; height: 28px; flex: 0 0 28px; border-radius: 0; background-color: transparent; background-image: url("/brand/Untitled%20design-3.svg"); background-position: center; background-repeat: no-repeat; background-size: 340%; position: relative; overflow: hidden; }
+.studio-brand-mark i { display: none; }
 .studio-brand-mark i:first-child { top: 7px; }
 .studio-brand-mark i:last-child { top: 16px; left: 5px; width: 15px; }
 .studio-icon-button { width: 38px; height: 38px; display: inline-grid; place-items: center; color: var(--studio-muted); background: transparent; border: 1px solid var(--studio-line); border-radius: 10px; cursor: pointer; transition: 150ms ease; }

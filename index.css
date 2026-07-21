@@ -24,6 +24,7 @@
   --stage-soft: #20211e;
   --stage-line: rgba(255, 255, 255, 0.12);
   --success: #187a4a;
+  --brand-logo-image: url("/brand/Untitled%20design-3.svg");
   --shadow-sm: 0 1px 2px rgba(17, 18, 15, 0.08), 0 8px 24px rgba(17, 18, 15, 0.05);
   --shadow-lg: 0 26px 80px rgba(17, 18, 15, 0.18), 0 4px 18px rgba(17, 18, 15, 0.1);
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
@@ -221,21 +222,19 @@ a {
   height: 31px;
   place-items: center;
   overflow: hidden;
-  border-radius: 9px;
-  background: var(--coral);
+  border-radius: 0;
+  background-color: transparent;
+  background-image: var(--brand-logo-image);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 340%;
   color: #fff;
-  box-shadow: inset 0 0 0 1px rgba(17, 18, 15, 0.12);
+  box-shadow: none;
 }
 
 .brand-glyph::before,
 .brand-glyph::after {
-  content: "";
-  position: absolute;
-  width: 21px;
-  height: 5px;
-  border-radius: 999px;
-  background: currentColor;
-  transform: rotate(-32deg);
+  content: none;
 }
 
 .brand-glyph::before {
