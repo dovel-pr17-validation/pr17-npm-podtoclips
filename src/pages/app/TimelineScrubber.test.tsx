@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react';
+import { readFileSync } from 'node:fs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { TimelineScrubber } from '../../../components/TimelineScrubber';
 import { timelineTimeFromClientX } from '../../../components/VideoEditorPage';
@@ -10,6 +11,15 @@ describe('video editor timeline scrubbing', () => {
     expect(timelineTimeFromClientX(120, -200, 30)).toBe(10);
     expect(timelineTimeFromClientX(-300, -200, 30)).toBe(0);
     expect(timelineTimeFromClientX(2_000, -200, 30)).toBe(30);
+  });
+
+  it('isolates the animated landing-page playhead from the real editor', () => {
+    const marketingStyles = readFileSync('index.css', 'utf8');
+    const editorStyles = readFileSync('src/styles/editor.css', 'utf8');
+
+    expect(marketingStyles).not.toMatch(/^\s*\.timeline-playhead\s*\{\s*animation:/m);
+    expect(marketingStyles).toContain('.marketing-page .editor-timeline .timeline-playhead { animation: landing-playhead');
+    expect(editorStyles).toMatch(/\.editor-shell \.timeline-playhead \{[^}]*animation: none;/);
   });
 
   it('can drag backward after reaching the end and commits the released position', () => {

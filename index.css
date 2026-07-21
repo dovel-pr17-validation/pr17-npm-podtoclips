@@ -1854,7 +1854,7 @@ a {
   background: repeating-linear-gradient(90deg, rgba(111,137,255,.75) 0 1px, transparent 1px 4px), rgba(49,87,255,.11);
 }
 
-.timeline-playhead {
+.marketing-page .editor-timeline .timeline-playhead {
   position: absolute;
   top: 11px;
   bottom: 0;
@@ -1863,7 +1863,7 @@ a {
   background: var(--coral);
 }
 
-.timeline-playhead::before {
+.marketing-page .editor-timeline .timeline-playhead::before {
   content: "";
   position: absolute;
   top: 0;
@@ -3564,7 +3564,7 @@ a {
   .mini-audio, .timeline-audio { animation: landing-audio-flow 3.2s linear infinite; }
   .caption-chip.active { animation: landing-caption-focus 4.8s var(--ease-out) infinite; }
   .tracking-orbit::after { animation: landing-orbit-pulse 2.8s ease-in-out infinite; }
-  .timeline-playhead { animation: landing-playhead 6.4s ease-in-out infinite alternate; }
+  .marketing-page .editor-timeline .timeline-playhead { animation: landing-playhead 6.4s ease-in-out infinite alternate; }
   .final-clip-one { animation: landing-clip-fan 4.5s -.7s ease-in-out infinite; }
   .final-clip-two { animation: landing-clip-fan 4.5s ease-in-out infinite; }
   .final-clip-three { animation: landing-clip-fan 4.5s -1.4s ease-in-out infinite; }
