@@ -1,15 +1,22 @@
-import React, { useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 
 interface TimelineScrubberProps {
   value: number;
   duration: number;
   onScrubStart: () => void;
   onChange: (value: number) => void;
-  onScrubEnd: () => void;
+  onScrubEnd: (value: number) => void;
 }
 
 export const TimelineScrubber: React.FC<TimelineScrubberProps> = ({ value, duration, onScrubStart, onChange, onScrubEnd }) => {
   const draggingRef = useRef(false);
+  const activePointerRef = useRef<number | null>(null);
+  const pendingValueRef = useRef(value);
+  const animationFrameRef = useRef<number | null>(null);
+
+  useEffect(() => () => {
+    if (animationFrameRef.current !== null) window.cancelAnimationFrame(animationFrameRef.current);
+  }, []);
 
   const timeAtPointer = (element: HTMLDivElement, clientX: number) => {
     const bounds = element.getBoundingClientRect();
@@ -17,25 +24,69 @@ export const TimelineScrubber: React.FC<TimelineScrubberProps> = ({ value, durat
     return Math.max(0, Math.min(duration, ((clientX - bounds.left) / bounds.width) * duration));
   };
 
+  const scheduleChange = (nextValue: number) => {
+    pendingValueRef.current = nextValue;
+    if (animationFrameRef.current !== null) return;
+    animationFrameRef.current = window.requestAnimationFrame(() => {
+      animationFrameRef.current = null;
+      onChange(pendingValueRef.current);
+    });
+  };
+
+  const flushChange = (nextValue: number) => {
+    pendingValueRef.current = nextValue;
+    if (animationFrameRef.current !== null) {
+      window.cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
+    }
+    onChange(nextValue);
+  };
+
   const start = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (event.pointerType === 'mouse' && event.button !== 0) return;
     event.preventDefault();
     draggingRef.current = true;
-    event.currentTarget.setPointerCapture(event.pointerId);
+    activePointerRef.current = event.pointerId;
+    event.currentTarget.setPointerCapture?.(event.pointerId);
     onScrubStart();
-    onChange(timeAtPointer(event.currentTarget, event.clientX));
+    flushChange(timeAtPointer(event.currentTarget, event.clientX));
   };
 
   const move = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (!draggingRef.current || !event.currentTarget.hasPointerCapture(event.pointerId)) return;
-    onChange(timeAtPointer(event.currentTarget, event.clientX));
+    if (!draggingRef.current || activePointerRef.current !== event.pointerId) return;
+    scheduleChange(timeAtPointer(event.currentTarget, event.clientX));
   };
 
   const finish = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (!draggingRef.current) return;
-    onChange(timeAtPointer(event.currentTarget, event.clientX));
+    if (!draggingRef.current || activePointerRef.current !== event.pointerId) return;
+    const finalValue = timeAtPointer(event.currentTarget, event.clientX);
+    flushChange(finalValue);
     draggingRef.current = false;
-    if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
-    onScrubEnd();
+    activePointerRef.current = null;
+    if (event.currentTarget.hasPointerCapture?.(event.pointerId)) event.currentTarget.releasePointerCapture?.(event.pointerId);
+    onScrubEnd(finalValue);
+  };
+
+  const cancel = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!draggingRef.current || activePointerRef.current !== event.pointerId) return;
+    if (animationFrameRef.current !== null) {
+      window.cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
+    }
+    draggingRef.current = false;
+    activePointerRef.current = null;
+    onScrubEnd(pendingValueRef.current);
+  };
+
+  const lostCapture = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!draggingRef.current || activePointerRef.current !== event.pointerId) return;
+    if (animationFrameRef.current !== null) {
+      window.cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
+    }
+    draggingRef.current = false;
+    activePointerRef.current = null;
+    onScrubEnd(pendingValueRef.current);
   };
 
   const keyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
@@ -45,7 +96,7 @@ export const TimelineScrubber: React.FC<TimelineScrubberProps> = ({ value, durat
     const step = event.shiftKey ? 5 : 1;
     const next = event.key === 'Home' ? 0 : event.key === 'End' ? duration : value + (event.key === 'ArrowLeft' ? -step : step);
     onChange(Math.max(0, Math.min(duration, next)));
-    onScrubEnd();
+    onScrubEnd(Math.max(0, Math.min(duration, next)));
   };
 
   const progress = duration > 0 ? Math.max(0, Math.min(100, (value / duration) * 100)) : 0;
@@ -61,7 +112,8 @@ export const TimelineScrubber: React.FC<TimelineScrubberProps> = ({ value, durat
       onPointerDown={start}
       onPointerMove={move}
       onPointerUp={finish}
-      onPointerCancel={finish}
+      onPointerCancel={cancel}
+      onLostPointerCapture={lostCapture}
       onKeyDown={keyDown}
       className="editor-preview-scrubber"
     >

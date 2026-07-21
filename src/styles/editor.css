@@ -463,8 +463,8 @@
 .editor-preview-scrubber:focus-visible { box-shadow: 0 0 0 3px rgb(113 128 255 / 52%); }
 .editor-preview-scrubber-track, .editor-preview-scrubber-progress { height: 4px; position: absolute; top: 10px; left: 0; border-radius: 999px; }
 .editor-preview-scrubber-track { right: 0; background: rgb(255 255 255 / 22%); }
-.editor-preview-scrubber-progress { background: #7e8bff; }
-.editor-preview-scrubber-thumb { width: 14px; height: 14px; position: absolute; top: 5px; border: 2px solid #fff; border-radius: 50%; background: #7180ff; box-shadow: 0 2px 8px rgb(0 0 0 / 35%); transform: translateX(-50%); }
+.editor-preview-scrubber-progress { background: #7e8bff; will-change: width; }
+.editor-preview-scrubber-thumb { width: 14px; height: 14px; position: absolute; top: 5px; border: 2px solid #fff; border-radius: 50%; background: #7180ff; box-shadow: 0 2px 8px rgb(0 0 0 / 35%); transform: translate3d(-50%, 0, 0); will-change: left; }
 
 /* Inspector */
 
@@ -619,7 +619,7 @@
 .timeline-audio-content small { display: none; color: var(--ed-green); font-size: 9px; }
 .timeline-audio-content button { min-height: 26px; padding: 0 9px; border: 1px solid color-mix(in srgb, var(--ed-green) 35%, var(--ed-line)); border-radius: 6px; color: var(--ed-green); background: var(--ed-raised); font-size: 10px; cursor: pointer; }
 
-.timeline-playhead { position: absolute; inset-block: 0; z-index: 20; pointer-events: none; border-left: 2px solid var(--ed-accent); }
+.timeline-playhead { position: absolute; inset-block: 0; z-index: 20; pointer-events: none; border-left: 2px solid var(--ed-accent); will-change: left; }
 .timeline-playhead::before { content: ''; width: 12px; height: 10px; position: absolute; top: -2px; left: -7px; border-radius: 3px 3px 6px 6px; background: var(--ed-accent); }
 .timeline-playhead > div { position: absolute; inset: -5px -11px; pointer-events: auto; cursor: ew-resize; }
 

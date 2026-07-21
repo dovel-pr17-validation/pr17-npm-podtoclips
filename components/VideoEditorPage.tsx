@@ -211,18 +211,22 @@ export const VideoEditorPage: React.FC<{ clipId: string; onBack: () => void }> =
     replaceTimelineSegments([...segments, segment], segment.id);
   };
 
-  const setPlayheadFromTimeline = (seconds: number, autoplay = false) => {
+  const setPlayheadFromTimeline = (seconds: number, autoplay = false, precise = false) => {
     const location = locateTimelinePosition(segments, seconds);
     if (!location) return;
     setPlayhead(location.timelineTime);
     setIsPreviewFaded(false);
-    syncMusicPosition(location.timelineTime);
+    if (precise || playbackModeRef.current !== 'scrubbing') syncMusicPosition(location.timelineTime);
 
     const element = videoRef.current;
     if (element && location.segment.assetKey === activeSegment?.assetKey) {
       setPendingPreviewSeek(null);
       setActiveSegmentId(location.segment.id);
-      element.currentTime = location.sourceTime;
+      if (Math.abs(element.currentTime - location.sourceTime) > 0.001) {
+        const fastSeek = (element as HTMLVideoElement & { fastSeek?: (time: number) => void }).fastSeek;
+        if (!precise && playbackModeRef.current === 'scrubbing' && typeof fastSeek === 'function') fastSeek.call(element, location.sourceTime);
+        else element.currentTime = location.sourceTime;
+      }
       if (autoplay) {
         playbackModeRef.current = 'playing';
         playMusicAt(location.timelineTime);
@@ -333,7 +337,7 @@ export const VideoEditorPage: React.FC<{ clipId: string; onBack: () => void }> =
     if (!activeSegment) return;
     const request = pendingPreviewSeek?.segmentId === activeSegment.id ? pendingPreviewSeek : null;
     event.currentTarget.currentTime = request?.sourceTime ?? activeSegment.start;
-    if (request?.autoplay) {
+    if (request?.autoplay && playbackModeRef.current !== 'scrubbing') {
       playbackModeRef.current = 'playing';
       playMusicAt(playhead);
       event.currentTarget.play().catch(() => { playbackModeRef.current = 'idle'; });
@@ -343,6 +347,15 @@ export const VideoEditorPage: React.FC<{ clipId: string; onBack: () => void }> =
       setIsPreviewFaded(false);
     }
     if (request) setPendingPreviewSeek(null);
+  };
+
+  const handlePreviewPlay = (event: React.SyntheticEvent<HTMLVideoElement>) => {
+    if (playbackModeRef.current !== 'playing') {
+      event.currentTarget.pause();
+      setIsPreviewPlaying(false);
+      return;
+    }
+    setIsPreviewPlaying(true);
   };
 
   const togglePreviewPlayback = () => {
@@ -411,12 +424,15 @@ export const VideoEditorPage: React.FC<{ clipId: string; onBack: () => void }> =
 
   const beginManualScrub = () => {
     playbackModeRef.current = 'scrubbing';
+    setPendingPreviewSeek((current) => current ? { ...current, autoplay: false } : current);
     videoRef.current?.pause();
     musicRef.current?.pause();
     setIsPreviewPlaying(false);
+    setIsPreviewFaded(false);
   };
 
-  const endManualScrub = () => {
+  const endManualScrub = (finalTime: number) => {
+    setPlayheadFromTimeline(finalTime, false, true);
     playbackModeRef.current = 'idle';
   };
 
@@ -483,7 +499,7 @@ export const VideoEditorPage: React.FC<{ clipId: string; onBack: () => void }> =
       </aside>
       <section className="editor-center">
         <div className="editor-stage">
-          {activeSegment ? <div className="editor-preview"><div className="editor-preview-video"><video ref={videoRef} key={activeSegment.assetKey} playsInline preload="auto" src={authorizedAssetUrls[activeSegment.assetKey]} onLoadedMetadata={(event) => { event.currentTarget.volume = videoVolume / 100; handlePreviewLoaded(event); }} onTimeUpdate={handlePreviewTimeUpdate} onPlay={() => setIsPreviewPlaying(true)} onPause={() => setIsPreviewPlaying(false)} /><div aria-hidden="true" className={`editor-preview-fade ${isPreviewFaded ? 'is-visible' : ''}`} /></div><div className="editor-preview-controls"><button onClick={togglePreviewPlayback} aria-label={isPreviewPlaying ? 'Pause preview' : 'Play preview'}>{isPreviewPlaying ? <Pause /> : <Play />}</button><TimelineScrubber value={playhead} duration={totalDuration} onScrubStart={beginManualScrub} onChange={(time) => setPlayheadFromTimeline(time)} onScrubEnd={endManualScrub} /><span>{formatTime(playhead)} <i>/</i> {formatTime(totalDuration)}</span></div></div> : <p className="editor-stage-empty">Add a clip to begin.</p>}
+          {activeSegment ? <div className="editor-preview"><div className="editor-preview-video"><video ref={videoRef} key={activeSegment.assetKey} playsInline preload="auto" src={authorizedAssetUrls[activeSegment.assetKey]} onLoadedMetadata={(event) => { event.currentTarget.volume = videoVolume / 100; handlePreviewLoaded(event); }} onTimeUpdate={handlePreviewTimeUpdate} onPlay={handlePreviewPlay} onPause={() => setIsPreviewPlaying(false)} /><div aria-hidden="true" className={`editor-preview-fade ${isPreviewFaded ? 'is-visible' : ''}`} /></div><div className="editor-preview-controls"><button onClick={togglePreviewPlayback} aria-label={isPreviewPlaying ? 'Pause preview' : 'Play preview'}>{isPreviewPlaying ? <Pause /> : <Play />}</button><TimelineScrubber value={playhead} duration={totalDuration} onScrubStart={beginManualScrub} onChange={(time) => setPlayheadFromTimeline(time)} onScrubEnd={endManualScrub} /><span>{formatTime(playhead)} <i>/</i> {formatTime(totalDuration)}</span></div></div> : <p className="editor-stage-empty">Add a clip to begin.</p>}
           <div className="hidden" aria-hidden="true">{preloadAssetKeys.filter((assetKey) => assetKey !== activeSegment?.assetKey && authorizedAssetUrls[assetKey]).map((assetKey) => <video key={assetKey} preload="auto" muted src={authorizedAssetUrls[assetKey]} />)}</div>
         </div>
         <section className="editor-panel editor-timeline-panel">
@@ -493,7 +509,7 @@ export const VideoEditorPage: React.FC<{ clipId: string; onBack: () => void }> =
           </div>
           <Timeline
             segments={segments} activeSegmentId={activeSegment?.id || null} playhead={playhead} music={music}
-            onSelect={setActiveSegmentId} onSeek={setPlayheadFromTimeline} onChangeSegments={(next) => replaceTimelineSegments(next)}
+            onSelect={setActiveSegmentId} onSeek={setPlayheadFromTimeline} onSeekStart={beginManualScrub} onSeekEnd={endManualScrub} onChangeSegments={(next) => replaceTimelineSegments(next)}
             onDropClip={(id) => { const next = library.find((item) => item.id === id); if (next) addClip(next); }}
             onDropImportedVideo={(id) => { const item = importedVideos.find((video) => video.id === id); if (item) { const segment = newImportedSegment(item); replaceTimelineSegments([...segments, segment], segment.id); } }}
             transitionsBySegmentId={transitionsBySegmentId} onSetTransition={applyTransition}
@@ -518,6 +534,10 @@ export const VideoEditorPage: React.FC<{ clipId: string; onBack: () => void }> =
 
 const PIXELS_PER_SECOND = 32;
 
+export const timelineTimeFromClientX = (clientX: number, canvasLeft: number, duration: number) => (
+  Math.max(0, Math.min(duration, (clientX - canvasLeft) / PIXELS_PER_SECOND))
+);
+
 const Timeline: React.FC<{
   segments: Segment[];
   activeSegmentId: string | null;
@@ -525,6 +545,8 @@ const Timeline: React.FC<{
   music: MusicAsset | null;
   onSelect: (id: string) => void;
   onSeek: (seconds: number) => void;
+  onSeekStart: () => void;
+  onSeekEnd: (seconds: number) => void;
   onChangeSegments: (segments: Segment[]) => void;
   onDropClip: (clipId: string) => void;
   onDropImportedVideo: (videoId: string) => void;
@@ -534,37 +556,84 @@ const Timeline: React.FC<{
   onSelectBoundary: (segmentId: string) => void;
   onDropMusic: () => void;
   onRemoveMusic: () => void;
-}> = ({ segments, activeSegmentId, playhead, music, onSelect, onSeek, onChangeSegments, onDropClip, onDropImportedVideo, transitionsBySegmentId, onSetTransition, selectedBoundarySegmentId, onSelectBoundary, onDropMusic, onRemoveMusic }) => {
+}> = ({ segments, activeSegmentId, playhead, music, onSelect, onSeek, onSeekStart, onSeekEnd, onChangeSegments, onDropClip, onDropImportedVideo, transitionsBySegmentId, onSetTransition, selectedBoundarySegmentId, onSelectBoundary, onDropMusic, onRemoveMusic }) => {
   const timelineRef = useRef<HTMLDivElement>(null);
-  const timelineDuration = Math.max(20, segments.reduce((sum, segment) => sum + segment.end - segment.start, 0) + 4);
+  const dragPointerRef = useRef<number | null>(null);
+  const pendingSeekRef = useRef(playhead);
+  const seekFrameRef = useRef<number | null>(null);
+  const contentDuration = segments.reduce((sum, segment) => sum + segment.end - segment.start, 0);
+  const timelineDuration = Math.max(20, contentDuration + 4);
   const timelineWidth = timelineDuration * PIXELS_PER_SECOND;
   const rulerMarks = Array.from({ length: Math.ceil(timelineDuration / 2) + 1 }, (_, index) => index * 2);
 
-  const positionFromEvent = (event: React.PointerEvent | React.DragEvent) => {
+  useEffect(() => () => {
+    if (seekFrameRef.current !== null) window.cancelAnimationFrame(seekFrameRef.current);
+  }, []);
+
+  const positionFromClientX = (clientX: number) => {
     const bounds = timelineRef.current?.getBoundingClientRect();
     if (!bounds) return 0;
-    const scroll = timelineRef.current?.parentElement?.scrollLeft || 0;
-    return Math.max(0, (event.clientX - bounds.left + scroll) / PIXELS_PER_SECOND);
+    return timelineTimeFromClientX(clientX, bounds.left, contentDuration);
   };
 
-  const seekAt = (event: React.PointerEvent<HTMLDivElement>) => onSeek(positionFromEvent(event));
+  const scheduleSeek = (time: number) => {
+    pendingSeekRef.current = time;
+    if (seekFrameRef.current !== null) return;
+    seekFrameRef.current = window.requestAnimationFrame(() => {
+      seekFrameRef.current = null;
+      onSeek(pendingSeekRef.current);
+    });
+  };
 
-  const beginPlayheadDrag = (event: React.PointerEvent<HTMLDivElement>) => {
+  const beginTimelineSeek = (event: React.PointerEvent<HTMLElement>) => {
+    if (event.pointerType === 'mouse' && event.button !== 0) return;
     event.preventDefault();
-    event.currentTarget.setPointerCapture(event.pointerId);
-    const move = (pointer: PointerEvent) => {
-      const bounds = timelineRef.current?.getBoundingClientRect();
-      if (!bounds) return;
-      const scroll = timelineRef.current?.parentElement?.scrollLeft || 0;
-      onSeek(Math.max(0, (pointer.clientX - bounds.left + scroll) / PIXELS_PER_SECOND));
-    };
-    const finish = () => {
-      window.removeEventListener('pointermove', move);
-      if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
-    };
-    window.addEventListener('pointermove', move);
-    window.addEventListener('pointerup', finish, { once: true });
-    window.addEventListener('pointercancel', finish, { once: true });
+    event.stopPropagation();
+    dragPointerRef.current = event.pointerId;
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+    onSeekStart();
+    const time = positionFromClientX(event.clientX);
+    pendingSeekRef.current = time;
+    onSeek(time);
+  };
+
+  const moveTimelineSeek = (event: React.PointerEvent<HTMLElement>) => {
+    if (dragPointerRef.current !== event.pointerId) return;
+    scheduleSeek(positionFromClientX(event.clientX));
+  };
+
+  const finishTimelineSeek = (event: React.PointerEvent<HTMLElement>) => {
+    if (dragPointerRef.current !== event.pointerId) return;
+    const finalTime = positionFromClientX(event.clientX);
+    if (seekFrameRef.current !== null) {
+      window.cancelAnimationFrame(seekFrameRef.current);
+      seekFrameRef.current = null;
+    }
+    pendingSeekRef.current = finalTime;
+    onSeek(finalTime);
+    dragPointerRef.current = null;
+    if (event.currentTarget.hasPointerCapture?.(event.pointerId)) event.currentTarget.releasePointerCapture?.(event.pointerId);
+    onSeekEnd(finalTime);
+  };
+
+  const cancelTimelineSeek = (event: React.PointerEvent<HTMLElement>) => {
+    if (dragPointerRef.current !== event.pointerId) return;
+    if (seekFrameRef.current !== null) {
+      window.cancelAnimationFrame(seekFrameRef.current);
+      seekFrameRef.current = null;
+    }
+    dragPointerRef.current = null;
+    onSeekEnd(pendingSeekRef.current);
+  };
+
+  const lostTimelineCapture = (event: React.PointerEvent<HTMLElement>) => {
+    if (dragPointerRef.current !== event.pointerId) return;
+    if (seekFrameRef.current !== null) {
+      window.cancelAnimationFrame(seekFrameRef.current);
+      seekFrameRef.current = null;
+    }
+    dragPointerRef.current = null;
+    onSeekEnd(pendingSeekRef.current);
   };
 
   const reorderBefore = (fromId: string, targetId: string) => {
@@ -581,7 +650,7 @@ const Timeline: React.FC<{
   let cursor = 0;
   return <div className="timeline-scrollport">
     <div className="timeline-canvas" ref={timelineRef} style={{ width: `${timelineWidth}px` }}>
-      <div className="timeline-ruler" onPointerDown={seekAt}>
+      <div className="timeline-ruler" onPointerDown={beginTimelineSeek} onPointerMove={moveTimelineSeek} onPointerUp={finishTimelineSeek} onPointerCancel={cancelTimelineSeek} onLostPointerCapture={lostTimelineCapture}>
         {rulerMarks.map((mark) => <span key={mark} className="timeline-ruler-mark" style={{ left: `${mark * PIXELS_PER_SECOND}px` }}>{formatTime(mark)}</span>)}
       </div>
       <div className="timeline-lane-label"><span>Video</span><span>Drag clips to reorder · split at playhead, then delete</span></div>
@@ -599,7 +668,7 @@ const Timeline: React.FC<{
       <div className={`timeline-audio-lane ${music ? 'has-music' : ''}`} onDragOver={(event) => event.preventDefault()} onDrop={(event) => { event.preventDefault(); if (event.dataTransfer.getData('application/easyed-music')) onDropMusic(); }}>
         {music ? <div className="timeline-audio-content"><div><strong>♫ {music.name}</strong><small>Loops to match the sequence</small></div><button onClick={onRemoveMusic}>Remove</button></div> : <p>Drop a music track onto this lane</p>}
       </div>
-      <div className="timeline-playhead" style={{ left: `${Math.min(timelineWidth, playhead * PIXELS_PER_SECOND)}px` }}><div onPointerDown={beginPlayheadDrag} /></div>
+      <div className="timeline-playhead" style={{ left: `${Math.min(contentDuration, playhead) * PIXELS_PER_SECOND}px` }}><div onPointerDown={beginTimelineSeek} onPointerMove={moveTimelineSeek} onPointerUp={finishTimelineSeek} onPointerCancel={cancelTimelineSeek} onLostPointerCapture={lostTimelineCapture} /></div>
     </div>
   </div>;
 };
