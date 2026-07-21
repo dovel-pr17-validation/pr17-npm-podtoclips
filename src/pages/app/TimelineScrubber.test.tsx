@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { readFileSync } from 'node:fs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { TimelineScrubber } from '../../../components/TimelineScrubber';
-import { timelineTimeFromClientX } from '../../../components/VideoEditorPage';
+import { splitSegmentsAtTimelineTime, timelineTimeFromClientX, type Segment } from '../../../components/VideoEditorPage';
 
 describe('video editor timeline scrubbing', () => {
   afterEach(() => vi.restoreAllMocks());
@@ -20,6 +20,42 @@ describe('video editor timeline scrubbing', () => {
     expect(marketingStyles).not.toMatch(/^\s*\.timeline-playhead\s*\{\s*animation:/m);
     expect(marketingStyles).toContain('.marketing-page .editor-timeline .timeline-playhead { animation: landing-playhead');
     expect(editorStyles).toMatch(/\.editor-shell \.timeline-playhead \{[^}]*animation: none;/);
+  });
+
+  it('splits from the canonical timeline playhead in the first four seconds', () => {
+    const segment: Segment = {
+      id: 'segment-1',
+      clipId: 'clip-1',
+      title: 'Test clip',
+      assetKey: 'renders/test.mp4',
+      start: 0,
+      end: 10,
+      sourceDuration: 10,
+    };
+
+    const result = splitSegmentsAtTimelineTime([segment], 4, 'test');
+
+    expect(result).not.toBeNull();
+    expect(result?.segments.map((item) => item.end - item.start)).toEqual([4, 6]);
+    expect(result?.segments.reduce((total, item) => total + item.end - item.start, 0)).toBe(10);
+    expect(result?.second.id).toBe('segment-1-b-test');
+  });
+
+  it('maps timeline time to source time for already trimmed clips', () => {
+    const segment: Segment = {
+      id: 'trimmed',
+      clipId: 'clip-1',
+      title: 'Trimmed clip',
+      assetKey: 'renders/test.mp4',
+      start: 6,
+      end: 16,
+      sourceDuration: 20,
+    };
+
+    const result = splitSegmentsAtTimelineTime([segment], 4, 'trimmed-test');
+
+    expect(result?.splitSourceTime).toBe(10);
+    expect(result?.segments.map((item) => [item.start, item.end])).toEqual([[6, 10], [10, 16]]);
   });
 
   it('can drag backward after reaching the end and commits the released position', () => {

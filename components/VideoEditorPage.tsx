@@ -8,7 +8,7 @@ import { downloadAuthorizedAsset, requestAuthorizedAssetUrl } from '../src/media
 
 const API_BASE = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:3005/api').replace(/\/$/, '');
 
-type Segment = { id: string; clipId: string; title: string; assetKey: string; start: number; end: number; sourceDuration: number };
+export type Segment = { id: string; clipId: string; title: string; assetKey: string; start: number; end: number; sourceDuration: number };
 type MusicAsset = { assetKey: string; name: string; url: string };
 type ImportedVideo = { id: string; assetKey: string; name: string; duration: number };
 type PlaybackMode = 'idle' | 'playing' | 'scrubbing' | 'loading' | 'ended';
@@ -20,7 +20,10 @@ type EditorSnapshot = {
   playhead: number;
 };
 
-const formatTime = (seconds: number) => `${Math.floor(seconds / 60)}:${Math.floor(seconds % 60).toString().padStart(2, '0')}`;
+const formatTime = (seconds: number) => {
+  const displaySeconds = Math.max(0, Math.round(seconds));
+  return `${Math.floor(displaySeconds / 60)}:${(displaySeconds % 60).toString().padStart(2, '0')}`;
+};
 const clipDuration = (clip: Clip) => Math.max(0.1, clip.end - clip.start);
 const newSegment = (clip: Clip): Segment => ({
   id: `${clip.id}-${crypto.randomUUID()}`,
@@ -53,6 +56,29 @@ const locateTimelinePosition = (segments: Segment[], requestedTime: number) => {
     timelineStart = timelineEnd;
   }
   return null;
+};
+
+const MIN_SPLIT_SEGMENT_SECONDS = 0.2;
+
+export const splitSegmentsAtTimelineTime = (segments: Segment[], requestedTime: number, splitToken: string) => {
+  const location = locateTimelinePosition(segments, requestedTime);
+  if (!location) return null;
+  const splitSourceTime = location.sourceTime;
+  if (
+    splitSourceTime <= location.segment.start + MIN_SPLIT_SEGMENT_SECONDS
+    || splitSourceTime >= location.segment.end - MIN_SPLIT_SEGMENT_SECONDS
+  ) return null;
+
+  const first = { ...location.segment, id: `${location.segment.id}-a-${splitToken}`, end: splitSourceTime };
+  const second = { ...location.segment, id: `${location.segment.id}-b-${splitToken}`, start: splitSourceTime };
+  return {
+    original: location.segment,
+    first,
+    second,
+    splitSourceTime,
+    timelineTime: location.timelineTime,
+    segments: segments.flatMap((segment) => segment.id === location.segment.id ? [first, second] : [segment]),
+  };
 };
 
 const fileDuration = (file: File) => new Promise<number>((resolve, reject) => {
@@ -241,15 +267,34 @@ export const VideoEditorPage: React.FC<{ clipId: string; onBack: () => void }> =
   };
 
   const splitActiveSegment = () => {
-    if (!activeSegment) return;
-    const playhead = videoRef.current?.currentTime ?? activeSegment.start;
-    if (playhead <= activeSegment.start + 0.2 || playhead >= activeSegment.end - 0.2) {
-      setError('Move the preview playhead inside the selected clip before cutting.');
+    const result = splitSegmentsAtTimelineTime(segments, playhead, crypto.randomUUID());
+    if (!result) {
+      setError('Move the timeline playhead at least 0.2 seconds inside a clip before splitting.');
       return;
     }
-    const first = { ...activeSegment, id: `${activeSegment.id}-a`, end: playhead };
-    const second = { ...activeSegment, id: `${activeSegment.id}-b`, start: playhead };
-    replaceTimelineSegments(segments.flatMap((item) => item.id === activeSegment.id ? [first, second] : [item]), second.id);
+    setError(null);
+    replaceTimelineSegments(result.segments, result.second.id);
+    setSelectedBoundarySegmentId(result.first.id);
+    setTransitionsBySegmentId((current) => {
+      const next = { ...current };
+      const outgoingTransition = next[result.original.id];
+      delete next[result.original.id];
+      next[result.first.id] = 'none';
+      if (outgoingTransition) next[result.second.id] = outgoingTransition;
+      return next;
+    });
+    setPlayhead(result.timelineTime);
+    if (videoRef.current) videoRef.current.currentTime = result.splitSourceTime;
+  };
+
+  const selectTimelineSegment = (segmentId: string) => {
+    const selectedIndex = segments.findIndex((segment) => segment.id === segmentId);
+    if (selectedIndex < 0) return;
+    const timelineStart = segments.slice(0, selectedIndex).reduce((sum, segment) => sum + segment.end - segment.start, 0);
+    beginManualScrub();
+    setPlayheadFromTimeline(timelineStart, false, true);
+    playbackModeRef.current = 'idle';
+    setError(null);
   };
 
   const deleteSelectedClip = () => {
@@ -258,10 +303,19 @@ export const VideoEditorPage: React.FC<{ clipId: string; onBack: () => void }> =
     const next = segments.filter((segment) => segment.id !== activeSegment.id);
     const nextActive = next.length ? next[Math.min(Math.max(0, removedIndex), next.length - 1)] : null;
     replaceTimelineSegments(next, nextActive?.id || null);
+    setTransitionsBySegmentId((current) => {
+      const updated = { ...current };
+      delete updated[activeSegment.id];
+      const previous = segments[removedIndex - 1];
+      if (previous && removedIndex === segments.length - 1) delete updated[previous.id];
+      return updated;
+    });
+    setSelectedBoundarySegmentId(null);
     playbackModeRef.current = 'idle';
     videoRef.current?.pause();
     musicRef.current?.pause();
     setPlayhead(0);
+    setError(null);
     if (nextActive) setPendingPreviewSeek({ segmentId: nextActive.id, sourceTime: nextActive.start, autoplay: false });
   };
 
@@ -505,11 +559,11 @@ export const VideoEditorPage: React.FC<{ clipId: string; onBack: () => void }> =
         <section className="editor-panel editor-timeline-panel">
           <div className="editor-timeline-head">
             <div className="editor-timeline-title"><Scissors /><h2>Timeline</h2><span>{formatTime(totalDuration)} total</span></div>
-            {activeSegment && <div className="editor-timeline-actions"><button onClick={splitActiveSegment}><Scissors />Split</button><button onClick={deleteSelectedClip} className="is-danger"><X />Delete</button></div>}
+            {activeSegment && <div className="editor-timeline-actions"><button onClick={splitActiveSegment} title="Split the clip at the timeline playhead"><Scissors />Split</button><button onClick={deleteSelectedClip} className="is-danger" title="Delete the selected timeline segment"><X />Delete</button></div>}
           </div>
           <Timeline
             segments={segments} activeSegmentId={activeSegment?.id || null} playhead={playhead} music={music}
-            onSelect={setActiveSegmentId} onSeek={setPlayheadFromTimeline} onSeekStart={beginManualScrub} onSeekEnd={endManualScrub} onChangeSegments={(next) => replaceTimelineSegments(next)}
+            onSelect={selectTimelineSegment} onSeek={setPlayheadFromTimeline} onSeekStart={beginManualScrub} onSeekEnd={endManualScrub} onChangeSegments={(next) => replaceTimelineSegments(next)}
             onDropClip={(id) => { const next = library.find((item) => item.id === id); if (next) addClip(next); }}
             onDropImportedVideo={(id) => { const item = importedVideos.find((video) => video.id === id); if (item) { const segment = newImportedSegment(item); replaceTimelineSegments([...segments, segment], segment.id); } }}
             transitionsBySegmentId={transitionsBySegmentId} onSetTransition={applyTransition}
@@ -659,9 +713,9 @@ const Timeline: React.FC<{
           const left = cursor * PIXELS_PER_SECOND;
           const width = Math.max(42, (segment.end - segment.start) * PIXELS_PER_SECOND);
           cursor += segment.end - segment.start;
-          return <React.Fragment key={segment.id}><div draggable onDragStart={(event) => event.dataTransfer.setData('application/easyed-segment', segment.id)} onDragOver={(event) => event.preventDefault()} onDrop={(event) => { event.preventDefault(); const id = event.dataTransfer.getData('application/easyed-segment'); if (id) reorderBefore(id, segment.id); }} onClick={() => onSelect(segment.id)} className={`timeline-segment ${activeSegmentId === segment.id ? 'is-active' : ''}`} style={{ left, width }}>
+          return <React.Fragment key={segment.id}><div role="button" tabIndex={0} aria-label={`Select clip ${index + 1}: ${segment.title}, ${formatTime(segment.end - segment.start)}`} draggable onDragStart={(event) => event.dataTransfer.setData('application/easyed-segment', segment.id)} onDragOver={(event) => event.preventDefault()} onDrop={(event) => { event.preventDefault(); const id = event.dataTransfer.getData('application/easyed-segment'); if (id) reorderBefore(id, segment.id); }} onClick={() => onSelect(segment.id)} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onSelect(segment.id); } }} className={`timeline-segment ${activeSegmentId === segment.id ? 'is-active' : ''}`} style={{ left, width }}>
             <div className="timeline-segment-copy"><strong>{index + 1}. {segment.title}</strong><small>{formatTime(segment.end - segment.start)}</small></div>
-          </div>{index < segments.length - 1 && <button title="Select this transition junction" onClick={() => onSelectBoundary(segment.id)} className={`timeline-boundary ${selectedBoundarySegmentId === segment.id ? 'is-selected' : ''} ${transitionsBySegmentId[segment.id] === 'fade' ? 'is-fade' : ''}`} style={{ left: left + width }}>{transitionsBySegmentId[segment.id] === 'fade' ? 'Fade' : 'Cut'}</button>}</React.Fragment>;
+          </div>{index < segments.length - 1 && <button title="Transition between these clips. This does not remove footage." aria-label={`${transitionsBySegmentId[segment.id] === 'fade' ? 'Fade' : 'Cut'} transition after clip ${index + 1}`} onClick={() => onSelectBoundary(segment.id)} className={`timeline-boundary ${selectedBoundarySegmentId === segment.id ? 'is-selected' : ''} ${transitionsBySegmentId[segment.id] === 'fade' ? 'is-fade' : ''}`} style={{ left: left + width }}>{transitionsBySegmentId[segment.id] === 'fade' ? 'Fade' : 'Cut'}</button>}</React.Fragment>;
         })}
       </div>
       <div className="timeline-lane-label is-audio"><span>Audio</span><span>{music ? 'Music is mixed underneath all video clips.' : 'Drop uploaded music here'}</span></div>
