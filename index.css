@@ -465,6 +465,56 @@ a {
   color: var(--success);
 }
 
+.hero-recognition {
+  display: grid;
+  gap: 10px;
+  margin-top: 30px;
+}
+
+.hero-recognition-label {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 750;
+  text-transform: uppercase;
+  letter-spacing: .13em;
+}
+
+.hero-recognition-badges {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.hero-recognition-link {
+  min-height: 54px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 12px;
+  text-decoration: none;
+  transition: transform 160ms ease, filter 160ms ease;
+}
+
+.hero-recognition-link:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.04);
+}
+
+.hero-recognition-link:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--coral) 42%, transparent);
+  outline-offset: 4px;
+}
+
+.hero-recognition-link img {
+  display: block;
+  height: 54px;
+  width: auto;
+  max-width: 100%;
+}
+
+.hero-recognition-link.is-launch img { width: 201px; }
+.hero-recognition-link.is-product-hunt img { width: 250px; }
+
 .import-card-wrap {
   position: relative;
 }
