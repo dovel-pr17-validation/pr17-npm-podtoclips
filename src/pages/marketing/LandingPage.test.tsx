@@ -41,14 +41,17 @@ describe('LandingPage', () => {
     expect(signupLinks.some((link) => link.getAttribute('href') === '/signup')).toBe(true);
   });
 
-  it('shows the live Launch listing and hides Product Hunt before launch', () => {
+  it('shows the Launch and Product Hunt listings', () => {
     render(<LandingPage />);
     const launchLink = screen.getByRole('link', { name: 'PodToClips featured on Launch' });
+    const productHuntLink = screen.getByRole('link', { name: 'PodToClips AI featured on Product Hunt' });
 
     expect(launchLink).toHaveAttribute('href', 'https://trylaunch.ai/launch/podtoclips');
     expect(launchLink).toHaveAttribute('target', '_blank');
     expect(launchLink.querySelector('img')).toHaveAttribute('src', '/brand/podtoclips-launch-badge-white.png');
-    expect(screen.queryByRole('link', { name: 'PodToClips AI featured on Product Hunt' })).not.toBeInTheDocument();
+    expect(productHuntLink).toHaveAttribute('href', expect.stringContaining('https://www.producthunt.com/products/podtoclips-ai'));
+    expect(productHuntLink).toHaveAttribute('target', '_blank');
+    expect(productHuntLink.querySelector('img')).toHaveAttribute('src', expect.stringContaining('post_id=1204585'));
   });
 
   it('submits pasted video links to the new-project route', () => {

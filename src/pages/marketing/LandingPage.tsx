@@ -27,8 +27,6 @@ import React from 'react';
 import { buttonVariants } from '../../components/ui/Button';
 import { cn } from '../../lib/cn';
 
-const productHuntBadgeEnabled = import.meta.env.VITE_PRODUCT_HUNT_BADGE_ENABLED === '1';
-
 const navigation = [
   { label: 'Product', href: '#product' },
   { label: 'How it works', href: '#workflow' },
@@ -694,11 +692,9 @@ export const LandingPage = ({ variant = 'optimized' }: LandingPageProps) => {
                 <a className="hero-recognition-link is-launch" href="https://trylaunch.ai/launch/podtoclips" target="_blank" rel="dofollow noopener noreferrer" aria-label="PodToClips featured on Launch">
                   <img src="/brand/podtoclips-launch-badge-white.png" alt="Featured on Launch" width="201" height="54" />
                 </a>
-                {productHuntBadgeEnabled && (
-                  <a className="hero-recognition-link is-product-hunt" href="https://www.producthunt.com/products/podtoclips-ai?embed=true&amp;utm_source=badge-featured&amp;utm_medium=badge&amp;utm_campaign=badge-podtoclips-ai" target="_blank" rel="noopener noreferrer" aria-label="PodToClips AI featured on Product Hunt">
-                    <img src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1204585&amp;theme=light&amp;t=1784810386035" alt="PodToClips AI - Podcast to mass production grade clips at the cheapest cost. | Product Hunt" width="250" height="54" loading="eager" />
-                  </a>
-                )}
+                <a className="hero-recognition-link is-product-hunt" href="https://www.producthunt.com/products/podtoclips-ai?embed=true&amp;utm_source=badge-featured&amp;utm_medium=badge&amp;utm_campaign=badge-podtoclips-ai" target="_blank" rel="noopener noreferrer" aria-label="PodToClips AI featured on Product Hunt">
+                  <img src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1204585&amp;theme=light&amp;t=1784876983422" alt="PodToClips AI - Podcast to mass production grade clips at the cheapest cost. | Product Hunt" width="250" height="54" loading="eager" />
+                </a>
               </div>
             </div>
           </m.div>
