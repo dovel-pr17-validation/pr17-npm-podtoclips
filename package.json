@@ -28,7 +28,7 @@
     "@clerk/react": "^6.12.5",
     "@fontsource-variable/geist": "^5.2.9",
     "@fontsource/instrument-serif": "^5.2.8",
-    "@neondatabase/serverless": "^1.1.0",
+    "@neondatabase/serverless": "^1.2.0",
     "@radix-ui/react-accordion": "^1.2.16",
     "@radix-ui/react-dialog": "^1.1.19",
     "@remotion/captions": "^4.0.488",
