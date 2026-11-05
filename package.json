@@ -24,7 +24,7 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.654.0",
     "@aws-sdk/s3-request-presigner": "^3.654.0",
-    "@clerk/express": "^2.1.43",
+    "@clerk/express": "^2.1.87",
     "@clerk/react": "^6.12.5",
     "@fontsource-variable/geist": "^5.2.9",
     "@fontsource/instrument-serif": "^5.2.8",
